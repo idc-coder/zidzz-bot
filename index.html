@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>zidzz bot - Mainframe</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        :root {
+            --bg-color: #0d0d0d;
+            --grid-color: rgba(255, 255, 255, 0.08);
+            --text-color: #ffffff;
+            --accent-color: #ffffff;
+            --status-online: #00ff66;
+            --status-offline: #ff3333;
+        }
+        body {
+            background-color: var(--bg-color); color: var(--text-color);
+            font-family: 'Courier New', Courier, monospace; margin: 0; padding: 0;
+            display: flex; justify-content: center; align-items: center; min-height: 100vh;
+            background-image: linear-gradient(var(--grid-color) 1px, transparent 1px), linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        .terminal-container { background: rgba(15, 15, 15, 0.95); border: 2px solid var(--accent-color); width: 90%; max-width: 450px; padding: 25px; border-radius: 4px; }
+        .header { border-bottom: 2px solid var(--accent-color); padding-bottom: 10px; margin-bottom: 20px; text-align: center; }
+        .status-wrapper { display: flex; align-items: center; font-weight: bold; }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 12px; display: inline-block; }
+        .online { background-color: var(--status-online); box-shadow: 0 0 10px var(--status-online); }
+        .offline { background-color: var(--status-offline); box-shadow: 0 0 10px var(--status-offline); }
+        .pairing-box { margin-top: 20px; padding-top: 15px; border-top: 1px dashed var(--accent-color); }
+        input[type="text"] { width: 100%; background: #000; border: 1px solid var(--accent-color); color: #fff; padding: 10px; font-family: monospace; box-sizing: border-box; margin-bottom: 15px; }
+        button { width: 100%; background: #fff; color: #000; border: none; padding: 10px; font-family: monospace; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        #codeDisplay { margin-top: 15px; text-align: center; font-size: 26px; font-weight: bold; letter-spacing: 4px; color: var(--status-online); background: rgba(255,255,255,0.05); padding: 10px; display: none; border: 1px solid var(--status-online); }
+    </style>
+</head>
+<body>
+    <div class="terminal-container">
+        <div class="header"><h1>[ ZIDZZ BOT MAINFRAME ]</h1></div>
+        <div class="status-wrapper">
+            <span>> ENGINE STATUS: </span>
+            <div id="statusDot" class="status-dot offline"></div>
+            <span id="statusText">WAITING...</span>
+        </div>
+        <div class="pairing-box" id="pairingBox">
+            <p>> INPUT BOT NUMBER (Ex: 62812345678):</p>
+            <input type="text" id="phoneNumber" placeholder="628xxxxxxxx">
+            <button onclick="requestPairing()">Generate Pairing Code</button>
+            <div id="codeDisplay">---- ----</div>
+        </div>
+    </div>
+    <script>
+        const socket = io();
+        async function checkBackend() {
+            try {
+                const res = await fetch('/api/status');
+                if (res.ok) {
+                    document.getElementById('statusDot').className = 'status-dot online';
+                    document.getElementById('statusText').innerText = 'ACTIVE / ONLINE';
+                    document.getElementById('statusText').style.color = '#00ff66';
+                }
+            } catch {
+                document.getElementById('statusDot').className = 'status-dot offline';
+                document.getElementById('statusText').innerText = 'OFFLINE';
+                document.getElementById('statusText').style.color = '#ff3333';
+            }
+        }
+        setInterval(checkBackend, 4000); checkBackend();
+        function requestPairing() {
+            const num = document.getElementById('phoneNumber').value;
+            if(!num) return alert('Masukkan nomor WA terlebih dahulu!');
+            document.getElementById('codeDisplay').style.display = 'block';
+            document.getElementById('codeDisplay').innerText = 'GENERATING...';
+            socket.emit('submit-number', num);
+        }
+        socket.on('pairing-code', (code) => { document.getElementById('codeDisplay').innerText = code; });
+        socket.on('bot-ready', () => { document.getElementById('pairingBox').innerHTML = "<p style='color:#00ff66'>> BOT SUCCESSFULLY CONNECTED TO WHATSAPP!</p>"; });
+    </script>
+</body>
+</html>
+
